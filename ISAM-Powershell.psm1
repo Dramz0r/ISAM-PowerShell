@@ -27,7 +27,11 @@ add-type @"
     return $headers
 }
 
-function Get-ReverseProxy {
+#
+# Reverse Proxy Management
+#
+
+Function Get-ReverseProxy {
         
         Param(
         [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machine,
@@ -54,7 +58,7 @@ function Get-ReverseProxy {
 
 }
 
-function Set-ReverseProxy {
+Function Set-ReverseProxy {
 
     param(        
         [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
@@ -127,7 +131,7 @@ function Set-ReverseProxy {
     }
 }
 
-function Stop-ReverseProxy {
+Function Stop-ReverseProxy {
 
     param(        
         [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
@@ -138,7 +142,7 @@ function Stop-ReverseProxy {
     
 }
 
-function Restart-ReverseProxy {
+Function Restart-ReverseProxy {
 
     param(        
         [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
@@ -207,6 +211,14 @@ function Restart-ReverseProxy {
         }
     }
 }
+
+Function Start-ReverseProxy {}
+
+Function Remove-ReverseProxy {}
+
+#
+# Logging
+#
 
 Function Get-ReverseProxyLogs{
 
@@ -347,6 +359,61 @@ Function Get-ReverseProxyLogs{
         }
     } 
 }
+
+#
+# Reverse Proxy Configuration
+#
+
+Function Add-ReverseProxyConfigItem {}
+
+Function Add-ReverseProxyStanza {}
+
+Function Remove-ReverseProxyStanza {}
+
+Function Remove-ReverseProxyConfigItemValue {}
+
+Function Get-ReverseProxyStanza {}
+
+Function Get-ReverseProxyConfigItemValue {}
+
+Function Get-ReverseProxyStanzaConfig {}
+
+Function Set-ReverseProxyConfigItemValue {}
+
+#
+# Reverse Proxy Junctions
+#
+
+Function Add-Junction {}
+
+Function Remove-Junction {}
+
+Function Add-JunctionBackend {}
+
+Function Remove-JunctionBackend {}
+
+Function Get-Junctions {}
+
+Function Get-JunctionConfig {}
+
+#
+# Distributed Session Cache
+#
+
+Function Get-ReplicaSets {}
+
+Function Get-ReplicaSetServers {}
+
+Function Get-Session {}
+
+Function Remove-Session {}
+
+Function Remove-SessionByUser {}
+
+
+
+
+
 
 
 Export-ModuleMember -function Get-ReverseProxy
