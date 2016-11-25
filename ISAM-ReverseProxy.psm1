@@ -212,9 +212,27 @@ Function Restart-ReverseProxy {
     }
 }
 
-Function Start-ReverseProxy {}
+Function Start-ReverseProxy {
 
-Function Remove-ReverseProxy {}
+    param(        
+        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
+        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+        [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][array]$instances)
+
+        Set-ReverseProxy -machines $machines -username $username -instances $instances -operation "start"
+        
+}
+
+Function Remove-ReverseProxy {
+
+    param(        
+        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
+        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+        [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][array]$instances)
+
+        Set-ReverseProxy -machines $machines -username $username -instances $instances -operation "unconfigure"
+
+}
 
 #
 # Logging
@@ -406,7 +424,7 @@ Function Get-ReplicaSetServers {}
 
 Function Get-Session {}
 
-Function Remove-Session {}
+Function Remove-SessionByID {}
 
 Function Remove-SessionByUser {}
 
