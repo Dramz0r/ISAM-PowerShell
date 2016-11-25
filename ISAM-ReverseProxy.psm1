@@ -66,9 +66,6 @@ Function Set-ReverseProxy {
     [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][array]$instances,
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][array]$operation)
 
-
-
-
     foreach ($machine in $machines){
         $password = Read-Host "Password for $machine"
 
@@ -390,7 +387,7 @@ Function Get-ReverseProxyLogsByDate{
 
                             [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
 
-                            #Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy_logging/instance/$instance/${FileID}?export" -Headers $headers -Method DELETE
+                            Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy_logging/instance/$instance/${FileID}?export" -Headers $headers -Method DELETE
 
                             } catch {
                                 $exception = $_.Exception.Response.GetResponseStream()
@@ -474,7 +471,6 @@ Function Get-ReverseProxyLogs {
             $instanceName = $instance.instance_name
             Write-Debug "Checking instance $instanceName on $machine"
 
-            #get all file for associated instance
             $result = try {
                 
             [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
@@ -526,7 +522,7 @@ Function Get-ReverseProxyLogs {
 
                         [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
 
-                        #Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy_logging/instance/$instance/${FileID}?export" -Headers $headers -Method DELETE
+                        Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy_logging/instance/$instance/${FileID}?export" -Headers $headers -Method DELETE
 
                         } catch {
                             $exception = $_.Exception.Response.GetResponseStream()
@@ -560,6 +556,34 @@ Function Get-ReverseProxyLogs {
             }
         }
     }
+}
+
+Function Remove-ReverseProxyLog {
+
+        Param(
+        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machine,
+        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$password,
+        [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][array]$instance,
+        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$FileID)
+
+        Set-Headers -username $username -password $password
+        Write-Debug "Deleting $fileID from $machine"
+
+        $res = try {
+
+            [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+            Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy_logging/instance/$instance/${FileID}?export" -Headers $headers -Method DELETE
+
+        } catch {
+            $exception = $_.Exception.Response.GetResponseStream()
+            $reader = New-Object System.IO.StreamReader($exception)
+            $responseBody = $reader.ReadToEnd();
+        }
+        $responseBody
+        $responseBody = $null
+
 }
 
 #
@@ -623,35 +647,3 @@ Export-ModuleMember -function 'Set-*'
 Export-ModuleMember -function 'Add-*'
 Export-ModuleMember -function 'Remove-*'
 Export-ModuleMember -Function 'Stop-*'
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
