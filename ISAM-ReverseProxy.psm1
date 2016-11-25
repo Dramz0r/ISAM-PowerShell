@@ -234,6 +234,59 @@ Function Remove-ReverseProxy {
 
 }
 
+Function Add-ReverseProxy {
+
+    param(        
+        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
+        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$instance,
+        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$hostname,
+        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$listenport,
+        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$domain = "Default",
+        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$secmasterpw,
+        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateSet('Yes','No')][string]$ldapssl = "No",
+        [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$ldapkdb,
+        [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$ldaplabel,
+        [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$ldapsslport = "636",
+        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateSet('Yes','No')][string]$http = "Yes",
+        [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$httpPort = "80",
+        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateSet('Yes','No')][string]$https = "Yes",
+        [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$httpsPort = "443",
+        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][string]$IPAddress
+        )
+
+        foreach($machine in $machines){
+
+        $password = Read-Host "Password for $machine"
+
+        Set-Headers -username $username -password $password
+         
+        
+
+
+        $body = "{'inst_name':'$instance',
+        'host':'$HostName',
+        'listening_port':'$ListenPort',
+        'domain':'$domain',
+        'admin_id':'sec_master',
+        'admin_pwd':'$SecMaster',
+        'ssl_yn':'$ldapssl',
+        'key_file':'$ldapkdb',
+        'cert_label':'$ldaplabel',
+        'ssl_port':'$ldapsslport',
+        'http_yn':'$http',
+        'http_port':'$httpPort',
+        'https_yn':'$https',
+        'https_port':'$httpsPort',
+        'nw_interface_yn':'yes',
+        'ip_address':'$IPAddress'}"
+        
+
+        }
+
+
+}
+
 #
 # Logging
 #
@@ -376,6 +429,137 @@ Function Get-ReverseProxyLogsByDate{
             }
         }
     } 
+}
+
+Function Get-ReverseProxyLogs {
+
+    Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][array]$instances,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$dir)
+   
+    foreach ($machine in $machines){
+        
+        $password = Read-Host "Password for $machine"
+
+        # Set headers
+        $headers = Set-Headers -username $username -password $password
+        
+        Write-Debug "Checking server $machine" 
+        #Get machine instances if var is empty
+        if ($instances -eq $null){
+
+            $instances = Get-ReverseProxy -machine $machine -username $username -password $password
+
+        }
+        
+        #create Dirs for saved logs
+        foreach ($instance in $instances){
+
+            $instanceName = $instance.instance_name
+            new-item "$Dir\$machine\$instanceName\" -ItemType directory -Force | Out-Null
+
+        }
+
+        #get logs
+        foreach ($instance in $instances){
+            if ($instance -eq $null){
+
+                Write-Debug "Null object in array"
+                Continue
+
+            }
+
+            $instanceName = $instance.instance_name
+            Write-Debug "Checking instance $instanceName on $machine"
+
+            #get all file for associated instance
+            $result = try {
+                
+            [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+            Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy_logging/instance/$instanceName" -Headers $headers -Method GET
+
+            } catch {
+                $exception = $_.Exception.Response.GetResponseStream()
+                $reader = New-Object System.IO.StreamReader($exception)
+                $responseBody = $reader.ReadToEnd();
+            }
+            $responseBody
+            $responseBody = $null
+
+            foreach ($file in $result){
+
+                $FileID = $File.id
+                Write-Debug "Downloading file: $FileID"
+
+                $result = try {
+                
+                    [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+                    Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy_logging/instance/$instanceName/${FileID}?export" -Headers $headers -Method GET -OutFile "${dir}\${machine}\${instanceName}\${fileID}"
+
+                } catch {
+                    $exception = $_.Exception.Response.GetResponseStream()
+                    $reader = New-Object System.IO.StreamReader($exception)
+                    $responseBody = $reader.ReadToEnd();
+                }
+                $responseBody
+                $responseBody = $null
+                                        
+                #Confirm the file has been downloaded
+                $worked = $false
+                do{
+
+                    $test = test-path $Dir\$Box\$instance\$FileID -IsValid
+
+                    if ($test -eq $true){
+
+                        #Now the file has been downloaded and confirmed, we can remove it from SAM
+                        Write-Debug "File has been downloaded successfully"
+                        $worked = $true
+                            
+                        $result = try {
+                            
+                        Write-Debug "Deleting $fileID from $machine"
+
+                        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+                        #Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy_logging/instance/$instance/${FileID}?export" -Headers $headers -Method DELETE
+
+                        } catch {
+                            $exception = $_.Exception.Response.GetResponseStream()
+                            $reader = New-Object System.IO.StreamReader($exception)
+                            $responseBody = $reader.ReadToEnd();
+                        }
+                        $responseBody
+                        $responseBody = $null
+
+                    } else {
+
+                        #If the file isn't found, re-download the file from SAM.
+                        Write-Debug "Warning: File not found"
+                        $result = try {
+                
+                        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+                        Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy_logging/instance/$instance" -Headers $headers -Method GET
+
+                        } catch {
+                            $exception = $_.Exception.Response.GetResponseStream()
+                            $reader = New-Object System.IO.StreamReader($exception)
+                            $responseBody = $reader.ReadToEnd();
+                        }
+                        $responseBody
+                        $responseBody = $null
+
+                        }
+
+                } while ($worked = $false)
+            }
+        }
+    }
 }
 
 #
