@@ -616,11 +616,91 @@ Function Remove-Junction {}
 
 Function Add-JunctionBackend {}
 
-Function Remove-JunctionBackend {}
+Function Remove-JunctionBackend {
 
-Function Get-Junctions {}
+Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][string]$machine,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$instance,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$junction,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$serverUUID)
+        
+    $password = Read-Host "Enter password for $username"
+    $headers = Set-Headers -username $username -password $password
 
-Function Get-JunctionConfig {}
+    $res = try {
+                
+    [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+    Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$instance/junctions?junctions_id=/$junction&servers_id=$serverUUID" -Headers $headers -Method DELETE
+
+    }catch {
+        $exception = $_.Exception.Response.GetResponseStream()
+        $reader = New-Object System.IO.StreamReader($exception)
+        $responseBody = $reader.ReadToEnd();
+    }
+    $responseBody
+
+    return $res
+
+}
+
+Function Get-Junctions {
+    
+    Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][string]$machine,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$instance)
+
+
+    $password = Read-Host "Enter password for $machine for $username"
+    $headers = Set-Headers -username $username -password $password
+
+    $res = try {
+                
+    [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+    Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$instance/junctions" -Headers $headers -Method GET
+
+    }catch {
+        $exception = $_.Exception.Response.GetResponseStream()
+        $reader = New-Object System.IO.StreamReader($exception)
+        $responseBody = $reader.ReadToEnd();
+    }
+    $responseBody
+
+    return $res
+}
+
+Function Get-JunctionConfig {
+
+Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$instance,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$junction)
+
+    foreach ($machine in $machines){
+        
+        $password = Read-Host "Enter password for $machine for $username"
+        $headers = Set-Headers -username $username -password $password
+
+        $res = try {
+                
+        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+        Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$instance/junctions?junctions_id=$junction" -Headers $headers -Method GET
+
+        }catch {
+            $exception = $_.Exception.Response.GetResponseStream()
+            $reader = New-Object System.IO.StreamReader($exception)
+            $responseBody = $reader.ReadToEnd();
+        }
+        $responseBody
+
+        return $res
+    }
+}
 
 #
 # Distributed Session Cache
@@ -647,3 +727,6 @@ Export-ModuleMember -function 'Set-*'
 Export-ModuleMember -function 'Add-*'
 Export-ModuleMember -function 'Remove-*'
 Export-ModuleMember -Function 'Stop-*'
+
+
+
