@@ -624,15 +624,59 @@ Param(
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Junction,
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateSet('tcp','ssl','tcpproxy','sslproxy','local','mutual')][string]$JunctionType,
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$ServerPort,
-    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$BirtualHostname,
-    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$VirtualHttpsHostname,
-    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$ServerDN,
-    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$QueryContents,
-    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$StatefulJunction,
-    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$CaseSensitiveURL,
-    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$,)
+    [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$VirtualHostname,
+    [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$VirtualHttpsHostname,
+    [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$ServerDN,
+    [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$QueryContents,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateSet('Yes','No')][string]$StatefulJunction = "no",
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateSet('Yes','No')][string]$CaseSensitiveURL = "no",
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateSet('Yes','No')][string]$WindowsStyleURL = "no",
+    [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$httpsPort,
+    [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$httpPort,
+    [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$ProxyHostname,
+    [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$ProxyPort,
+    [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$smsEnvironment,
+    [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$vHostLabel)
+
+    $password = Read-Host "Enter password for $Username"
+    
+    $headers = Set-Headers -username $Username -password $password
+
+    $body = "{
+        'server_hostname':'$BackendServer',
+        'junction_point':'$Junction',
+        'junction_type':'$JunctionType',
+        'server_port':'$ServerPort',
+        'virtual_hostname':'$VirtualHostname',
+        'virtual_https_hostname':'$VirtualHttpsHostname',
+        'server_dn':'$ServerDN',
+        'query_contents':'$QueryContents',
+        'stateful_junction':'$StatefulJunction',
+        'case_sensitive_url':'$CaseSensitiveURL',
+        'windows_style_url':'$WindowsStyleURL',
+        'https_port':'$httpsPort',
+        'http_port':'$httpPort',
+        'proxy_hostname':'$ProxyHostname',
+        'proxy_port':'$ProxyPort',
+        'sms_environment':'$smsEnvironment',
+        'vhost_label':'$vHostLabel'
+        }"
 
 
+    $res = try {
+                
+        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+        Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$instance/junctions" -Headers $headers -Method PUT -Body $body
+
+    }catch {
+        $exception = $_.Exception.Response.GetResponseStream()
+        $reader = New-Object System.IO.StreamReader($exception)
+        $responseBody = $reader.ReadToEnd();
+    }
+    $responseBody
+
+    return $res
 }
 
 Function Remove-JunctionBackend {
