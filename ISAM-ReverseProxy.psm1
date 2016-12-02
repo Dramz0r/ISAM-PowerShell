@@ -695,7 +695,7 @@ Function Remove-JunctionBackend {
                 
     [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
 
-    Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$instance/junctions?junctions_id=/$junction&servers_id=$serverUUID" -Headers $headers -Method DELETE
+    Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$instance/junctions?junctions_id=$junction&servers_id=$serverUUID" -Headers $headers -Method DELETE
 
     }catch {
         $exception = $_.Exception.Response.GetResponseStream()
@@ -769,15 +769,105 @@ Param(
 # Distributed Session Cache
 #
 
-Function Get-ReplicaSets {}
+Function Get-ReplicaSets {
+Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][string]$machine,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username)
 
-Function Get-ReplicaSetServers {}
+    $password = Read-Host "Password for user $username"
+    $headers = Set-Headers -username $username -password $password
 
-Function Get-Session {}
+    $res = try {
+                
+        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+        Invoke-RestMethod -Uri "https://$machine/isam/dsc/admin/replicas" -Headers $headers -Method GET
+
+        }catch {
+            $exception = $_.Exception.Response.GetResponseStream()
+            $reader = New-Object System.IO.StreamReader($exception)
+            $responseBody = $reader.ReadToEnd();
+        }
+    $responseBody
+    return $res
+}
+
+Function Get-ReplicaSetServers {
+    Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][string]$machine,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$replicaSet)
+
+    $password = Read-Host "Password for user $username"
+    $headers = Set-Headers -username $username -password $password
+
+    $res = try {
+                
+        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+        Invoke-RestMethod -Uri "https://$machine/isam/dsc/admin/replicas/$replicaSet/servers" -Headers $headers -Method GET
+
+        }catch {
+            $exception = $_.Exception.Response.GetResponseStream()
+            $reader = New-Object System.IO.StreamReader($exception)
+            $responseBody = $reader.ReadToEnd();
+        }
+    $responseBody
+    return $res
+}
+
+Function Get-Session {
+    Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][string]$machine,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$replicaSet,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Pattern = "*",
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$maxReturn = "100")
+
+    $password = Read-Host "Password for user $username"
+    $headers = Set-Headers -username $username -password $password
+
+    $res = try {
+                
+        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+        Invoke-RestMethod -Uri "https://$machine/isam/dsc/admin/replicas/$replicaSet/sessions?user=${Pattern}max=$maxReturn" -Headers $headers -Method GET
+
+        }catch {
+            $exception = $_.Exception.Response.GetResponseStream()
+            $reader = New-Object System.IO.StreamReader($exception)
+            $responseBody = $reader.ReadToEnd();
+        }
+    $responseBody
+    return $res
+}
 
 Function Remove-SessionByID {}
 
-Function Remove-SessionByUser {}
+Function Remove-SessionByUser {
+    Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][string]$machine,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$replicaSet,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$SMSUser)
+
+    $password = Read-Host "Password for user $username"
+    $headers = Set-Headers -username $username -password $password
+
+    $res = try {
+                
+        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+        Invoke-RestMethod -Uri "https://$machine/isam/dsc/admin/replicas/$replicaSet/sessions/user/$SMSUser" -Headers $headers -Method DELETE
+
+        }catch {
+            $exception = $_.Exception.Response.GetResponseStream()
+            $reader = New-Object System.IO.StreamReader($exception)
+            $responseBody = $reader.ReadToEnd();
+        }
+    $responseBody
+    return $res
+}
 
 
 
