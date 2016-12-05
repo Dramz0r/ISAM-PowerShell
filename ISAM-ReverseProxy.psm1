@@ -604,7 +604,40 @@ Function Get-ReverseProxyConfigItemValue {}
 
 Function Get-ReverseProxyStanzaConfig {}
 
-Function Set-ReverseProxyConfigItemValue {}
+Function Set-ReverseProxyConfigItemValue {
+
+    Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][Array]$machines,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Instance,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Stanza,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Entry,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$EntryChange)
+
+    foreach ($machine in $machines){
+
+        $password = Read-Host "Enter password for $machine for $username"
+        $headers = Set-Headers -username $username -password $password
+
+        $body = "{'value':'$EntryChange'}"
+
+        $res = try {
+                
+        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+        Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$Instance/configuration/stanza/$Stanza/entry_name/$Entry" -Headers $headers -Method PUT -Body $body
+
+        }catch {
+            $exception = $_.Exception.Response.GetResponseStream()
+            $reader = New-Object System.IO.StreamReader($exception)
+            $responseBody = $reader.ReadToEnd();
+        }
+        $responseBody
+
+        return $res
+    }
+
+}
 
 #
 # Reverse Proxy Junctions
