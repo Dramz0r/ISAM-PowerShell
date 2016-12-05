@@ -607,7 +607,7 @@ Function Get-ReverseProxyStanzaConfig {}
 Function Set-ReverseProxyConfigItemValue {
 
     Param(
-    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][Array]$machines,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Instance,
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Stanza,
@@ -625,7 +625,8 @@ Function Set-ReverseProxyConfigItemValue {
                 
         [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
 
-        Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$Instance/configuration/stanza/$Stanza/entry_name/$Entry" -Headers $headers -Method PUT -Body $body
+        Write-Debug "PUT https://$machine/wga/reverseproxy/$Instance/configuration/stanza/$Stanza/entry_name/$Entry - $body"
+        Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$Instance/configuration/stanza/$Stanza/entry_name/$Entry" -Headers $headers -Method PUT -Body $body -ContentType "application/json"
 
         }catch {
             $exception = $_.Exception.Response.GetResponseStream()
@@ -633,10 +634,7 @@ Function Set-ReverseProxyConfigItemValue {
             $responseBody = $reader.ReadToEnd();
         }
         $responseBody
-
-        return $res
     }
-
 }
 
 #
