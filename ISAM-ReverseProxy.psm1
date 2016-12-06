@@ -70,9 +70,9 @@ Function Get-ReverseProxy {
     
     $instances = try {
                 
-    [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
 
-    Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/" -Headers $headers -Method GET
+        Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/" -Headers $headers -Method GET
 
     }catch {
         $exception = $_.Exception.Response.GetResponseStream()
@@ -169,71 +169,76 @@ Function Stop-ReverseProxy {
 Function Restart-ReverseProxy {
 
     param(        
-        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][string]$machines,
+        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
         [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
         [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][array]$instances)
-
-    foreach ($machine in $machines){
-        $password = Read-Host "Password for $machine"
-
-        # Set headers
-        $headers = Set-Headers -username $username -password $password
 
         #If instances var isn't empty
         if ($instances -ne $null){
 
-            #Restart all instances specified in instances var
-            foreach ($instance in $instances){  
-    
-                $instName = $instance
-                Write-Host -ForegroundColor Yellow "Restarting $instance on $machine"
+            foreach($machine in $machines){
                 
-                $uri = "https://$machine/wga/reverseproxy/$instName"
-                $res = try { 
+                $password = Read-Host "Password for $machine"
+                $headers = Set-Headers -username $username -password $password
 
-                    [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy 
+                #Restart all instances specified in instances var
+                foreach ($instance in $instances){  
+
+                    $instName = $instance
+                    Write-Host -ForegroundColor Yellow "Restarting $instance on $machine"
+                
+                    $uri = "https://$machine/wga/reverseproxy/$instName"
+                    $res = try { 
+
+                        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy 
           
-                    Invoke-RestMethod -Uri $uri -Headers $headers -Method PUT -Body "{'operation':'restart'}" -ContentType "application/json"
+                        Invoke-RestMethod -Uri $uri -Headers $headers -Method PUT -Body "{'operation':'restart'}" -ContentType "application/json"
                     
-                } catch {
-                    $exception = $_.Exception.Response.GetResponseStream()
-                    $reader = New-Object System.IO.StreamReader($exception)
-                    $responseBody = $reader.ReadToEnd();
+                    } catch {
+                        $exception = $_.Exception.Response.GetResponseStream()
+                        $reader = New-Object System.IO.StreamReader($exception)
+                        $responseBody = $reader.ReadToEnd();
+                    }
+                    $res
+                    $responseBody
                 }
-                $res
-                $responseBody
-            }
-        } 
+            } 
+        }
 
-        #else restart all instances on machine
         else {
 
-            #Get WebSEAL instances
+            foreach($machine in $machines){
 
-            $instances = Get-ReverseProxy -machine $machine -username $username -password $password
+                $password = Read-Host "Password for $machine"
+                $headers = Set-Headers -username $username -password $password
+                $instances = Get-ReverseProxy -machine $machine -username $username -password $password
 
-            #Reboot all instances
-            foreach ($instance in $instances){  
-    
-                $instName = $instance.instance_name
-                Write-Host -ForegroundColor Yellow "Restarting $instName on $machine"
-
-                $uri = "https://$machine/wga/reverseproxy/$instName"
-                $res = try { 
-
-                    [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy 
-          
-                    Invoke-RestMethod -Uri $uri -Headers $headers -Method PUT -Body "{'operation':'restart'}" -ContentType "application/json"
+                #Reboot all instances
+                foreach ($instance in $instances){  
                     
-                } catch {
-                    $exception = $_.Exception.Response.GetResponseStream()
-                    $reader = New-Object System.IO.StreamReader($exception)
-                    $responseBody = $reader.ReadToEnd();
+                    if($instances -eq ""){
+                        continue
+                    }
+
+                    $instName = $instance.instance_name
+                    Write-Host -ForegroundColor Yellow "Restarting $instName on $machine"
+
+                    $uri = "https://$machine/wga/reverseproxy/$instName"
+                    $res = try { 
+
+                        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy 
+          
+                        Invoke-RestMethod -Uri $uri -Headers $headers -Method PUT -Body "{'operation':'restart'}" -ContentType "application/json"
+                    
+                    } catch {
+                        $exception = $_.Exception.Response.GetResponseStream()
+                        $reader = New-Object System.IO.StreamReader($exception)
+                        $responseBody = $reader.ReadToEnd();
+                    }
+                    $responseBody
                 }
-                $responseBody
             }
         }
-    }
 }
 
 Function Start-ReverseProxy {
@@ -1090,7 +1095,7 @@ Function Get-Session {
                 
         [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
 
-        Invoke-RestMethod -Uri "https://$machine/isam/dsc/admin/replicas/$replicaSet/sessions?user=${Pattern}max=$maxReturn" -Headers $headers -Method GET
+        Invoke-RestMethod -Uri "https://$machine/isam/dsc/admin/replicas/$replicaSet/sessions?user=${Pattern}&max=$maxReturn" -Headers $headers -Method GET
 
         }catch {
             $exception = $_.Exception.Response.GetResponseStream()
@@ -1098,7 +1103,10 @@ Function Get-Session {
             $responseBody = $reader.ReadToEnd();
         }
     $responseBody
-    return $res
+
+    $result = $res.matched_sessions | ConvertFrom-Json
+
+    return $result
 }
 
 Function Remove-SessionByID {}
