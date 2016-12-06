@@ -27,6 +27,33 @@ add-type @"
     return $headers
 }
 
+function Deploy-Changes{
+
+    Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username)
+
+    foreach($machine in $machines){
+
+        $password = Read-Host "Enter password for $machine for $username"
+        $headers = Set-Headers -username $username -password $password
+
+        $res = try {
+                
+        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+        Invoke-RestMethod -Uri "https://$machine/isam/pending_changes/deploy" -Headers $headers -Method GET
+
+        }catch {
+            $exception = $_.Exception.Response.GetResponseStream()
+            $reader = New-Object System.IO.StreamReader($exception)
+            $responseBody = $reader.ReadToEnd();
+        }
+        $responseBody
+        $res
+    }
+}
+
 #
 # Reverse Proxy Management
 #
@@ -142,7 +169,7 @@ Function Stop-ReverseProxy {
 Function Restart-ReverseProxy {
 
     param(        
-        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
+        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][string]$machines,
         [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
         [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][array]$instances)
 
@@ -183,7 +210,7 @@ Function Restart-ReverseProxy {
 
             #Get WebSEAL instances
 
-            $instances = Get-WebSEAL -machine $machine -username $username -password $password
+            $instances = Get-ReverseProxy -machine $machine -username $username -password $password
 
             #Reboot all instances
             foreach ($instance in $instances){  
@@ -590,19 +617,219 @@ Function Remove-ReverseProxyLog {
 # Reverse Proxy Configuration
 #
 
-Function Add-ReverseProxyConfigItem {}
+Function Add-ReverseProxyConfigItem {
 
-Function Add-ReverseProxyStanza {}
+    Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Instance,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Stanza,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Entry,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$value)
 
-Function Remove-ReverseProxyStanza {}
+    foreach ($machine in $machines){
 
-Function Remove-ReverseProxyConfigItemValue {}
+        $password = Read-Host "Enter password for $machine for $username"
+        $headers = Set-Headers -username $username -password $password
 
-Function Get-ReverseProxyStanza {}
+        $body = "{entries[['$Entry':'$value']]}"
 
-Function Get-ReverseProxyConfigItemValue {}
+        $res = try {
+                
+        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
 
-Function Get-ReverseProxyStanzaConfig {}
+        Write-Debug "PUT https://$machine/wga/reverseproxy/$Instance/configuration/stanza/$Stanza/entry_name/$Entry - $body"
+        Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$Instance/configuration/stanza/$Stanza/entry_name/$Entry" -Headers $headers -Method PUT -Body $body -ContentType "application/json"
+
+        }catch {
+            $exception = $_.Exception.Response.GetResponseStream()
+            $reader = New-Object System.IO.StreamReader($exception)
+            $responseBody = $reader.ReadToEnd();
+        }
+        $responseBody
+    }
+
+    Return $res
+
+}
+
+Function Add-ReverseProxyStanza {
+
+    Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Instance,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Stanza)
+
+    foreach ($machine in $machines){
+
+        $password = Read-Host "Enter password for $machine for $username"
+        $headers = Set-Headers -username $username -password $password
+
+        $res = try {
+                
+            [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+            Write-Debug "POST https://$machine/wga/reverseproxy/$Instance/configuration/stanza/$Stanza"
+            Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$Instance/configuration/stanza/$Stanza" -Headers $headers -Method POST
+
+        }catch {
+            $exception = $_.Exception.Response.GetResponseStream()
+            $reader = New-Object System.IO.StreamReader($exception)
+            $responseBody = $reader.ReadToEnd();
+        }
+        $responseBody
+
+        Return $res
+    }
+}
+
+Function Remove-ReverseProxyStanza {
+
+    Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Instance,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Stanza)
+
+    foreach ($machine in $machines){
+
+        $password = Read-Host "Enter password for $machine for $username"
+        $headers = Set-Headers -username $username -password $password
+
+        $res = try {
+                
+            [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+            Write-Debug "DELETE https://$machine/wga/reverseproxy/$Instance/configuration/stanza/$Stanza"
+            Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$Instance/configuration/stanza/$Stanza" -Headers $headers -Method DELETE
+
+        }catch {
+            $exception = $_.Exception.Response.GetResponseStream()
+            $reader = New-Object System.IO.StreamReader($exception)
+            $responseBody = $reader.ReadToEnd();
+        }
+        $responseBody
+    }
+}
+
+Function Remove-ReverseProxyConfigItemValue{
+
+    Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Instance,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Stanza,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Entry)
+
+    foreach ($machine in $machines){
+
+        $password = Read-Host "Enter password for $machine for $username"
+        $headers = Set-Headers -username $username -password $password
+
+        $res = try {
+                
+            [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+            Write-Debug "DELETE https://$machine/wga/reverseproxy/$Instance/configuration/stanza/$Stanza/entry_name/$Entry"
+            Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$Instance/configuration/stanza/$Stanza/entry_name/$Entry" -Headers $headers -Method DELETE
+
+        }catch {
+            $exception = $_.Exception.Response.GetResponseStream()
+            $reader = New-Object System.IO.StreamReader($exception)
+            $responseBody = $reader.ReadToEnd();
+        }
+        $responseBody
+    }
+
+}
+
+Function Get-ReverseProxyStanzas {
+
+    Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][string]$machine,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Instance)
+
+    $password = Read-Host "Enter password for $machine for $username"
+    $headers = Set-Headers -username $username -password $password
+
+    $res = try {
+                
+        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+        Write-Debug "GET https://$machine/wga/reverseproxy/$Instance/configuration/stanza"
+        Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$Instance/configuration/stanza" -Headers $headers -Method GET
+
+    }catch {
+        $exception = $_.Exception.Response.GetResponseStream()
+        $reader = New-Object System.IO.StreamReader($exception)
+        $responseBody = $reader.ReadToEnd();
+    }
+    $responseBody
+
+    return $res
+
+}
+
+Function Get-ReverseProxyConfigItemValue {
+
+    Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][string]$machine,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Instance,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Stanza,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Entry)
+
+    $password = Read-Host "Enter password for $machine for $username"
+    $headers = Set-Headers -username $username -password $password
+
+    $res = try {
+                
+        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+        Write-Debug "GET https://$machine/wga/reverseproxy/$Instance/configuration/stanza/$Stanza/entry_name/$Entry"
+        Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$Instance/configuration/stanza/$Stanza/entry_name/$Entry" -Headers $headers -Method GET
+
+    }catch {
+        $exception = $_.Exception.Response.GetResponseStream()
+        $reader = New-Object System.IO.StreamReader($exception)
+        $responseBody = $reader.ReadToEnd();
+    }
+    $responseBody
+
+    return $res
+
+}
+
+Function Get-ReverseProxyStanzaConfig {
+
+    Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][string]$machine,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Instance,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Stanza)
+
+    $password = Read-Host "Enter password for $machine for $username"
+    $headers = Set-Headers -username $username -password $password
+
+    $res = try {
+                
+        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+        Write-Debug "GET https://$machine/wga/reverseproxy/$Instance/configuration/stanza/$Stanza"
+        Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$Instance/configuration/stanza/$Stanza" -Headers $headers -Method GET
+
+    }catch {
+        $exception = $_.Exception.Response.GetResponseStream()
+        $reader = New-Object System.IO.StreamReader($exception)
+        $responseBody = $reader.ReadToEnd();
+    }
+    $responseBody
+
+    return $res
+
+}
 
 Function Set-ReverseProxyConfigItemValue {
 
@@ -634,6 +861,7 @@ Function Set-ReverseProxyConfigItemValue {
             $responseBody = $reader.ReadToEnd();
         }
         $responseBody
+        $res
     }
 }
 
