@@ -267,8 +267,11 @@ Function Restart-ReverseProxy {
                 #Reboot all instances
                 foreach ($instance in $instances){  
                     
-                    if($instances -eq ""){
-                        continue
+                    if ($instance -eq $null){
+
+                        Write-Debug "Null object in array"
+                        Continue
+
                     }
 
                     $instName = $instance.instance_name
@@ -341,9 +344,6 @@ Function Add-ReverseProxy {
 
         Set-Headers -username $username -password $password
          
-        
-
-
         $body = "{'inst_name':'$instance',
         'host':'$HostName',
         'listening_port':'$ListenPort',
@@ -360,7 +360,8 @@ Function Add-ReverseProxy {
         'https_port':'$httpsPort',
         'nw_interface_yn':'yes',
         'ip_address':'$IPAddress'}"
-        
+
+                
 
         }
 
@@ -383,19 +384,16 @@ Function Get-ReverseProxyLogsByDate{
     foreach ($machine in $machines){
         
         $password = Read-Host "Password for $machine"
-
-        # Set headers
         $headers = Set-Headers -username $username -password $password
         
         Write-Debug "Checking server $machine" 
-        #Get machine instances if var is empty
+
         if ($instances -eq $null){
 
             $instances = Get-ReverseProxy -machine $machine -username $username -password $password
 
         }
         
-        #create Dirs for saved logs
         foreach ($instance in $instances){
 
             $instanceName = $instance.instance_name
@@ -403,7 +401,6 @@ Function Get-ReverseProxyLogsByDate{
 
         }
 
-        #get logs
         foreach ($instance in $instances){
             if ($instance -eq $null){
 
@@ -415,7 +412,6 @@ Function Get-ReverseProxyLogsByDate{
             $instanceName = $instance.instance_name
             Write-Debug "Checking instance $instanceName on $machine"
 
-            #get all file for associated instance
             $result = try {
                 
             [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
@@ -434,7 +430,6 @@ Function Get-ReverseProxyLogsByDate{
 
                 if($file.id -like "*$date*"){
                 
-                    #and download it to the appropriate e:\logs\* folder
                     $FileID = $File.id
                     Write-Debug "Downloading file: $FileID"
 
@@ -452,7 +447,6 @@ Function Get-ReverseProxyLogsByDate{
                     $responseBody
                     $responseBody = $null
                                         
-                    #Confirm the file has been downloaded
                     $worked = $false
                     do{
 
@@ -460,7 +454,6 @@ Function Get-ReverseProxyLogsByDate{
 
                         if ($test -eq $true){
 
-                            #Now the file has been downloaded and confirmed, we can remove it from SAM
                             Write-Debug "File has been downloaded successfully"
                             $worked = $true
                             
@@ -482,7 +475,6 @@ Function Get-ReverseProxyLogsByDate{
 
                         } else {
 
-                            #If the file isn't found, re-download the file from SAM.
                             Write-Debug "Warning: File not found"
                             $result = try {
                 
@@ -523,18 +515,15 @@ Function Get-ReverseProxyLogs {
         
         $password = Read-Host "Password for $machine"
 
-        # Set headers
         $headers = Set-Headers -username $username -password $password
         
         Write-Debug "Checking server $machine" 
-        #Get machine instances if var is empty
         if ($instances -eq $null){
 
             $instances = Get-ReverseProxy -machine $machine -username $username -password $password
 
         }
         
-        #create Dirs for saved logs
         foreach ($instance in $instances){
 
             $instanceName = $instance.instance_name
@@ -542,7 +531,6 @@ Function Get-ReverseProxyLogs {
 
         }
 
-        #get logs
         foreach ($instance in $instances){
             if ($instance -eq $null){
 
@@ -587,7 +575,6 @@ Function Get-ReverseProxyLogs {
                 $responseBody
                 $responseBody = $null
                                         
-                #Confirm the file has been downloaded
                 $worked = $false
                 do{
 
@@ -595,7 +582,6 @@ Function Get-ReverseProxyLogs {
 
                     if ($test -eq $true){
 
-                        #Now the file has been downloaded and confirmed, we can remove it from SAM
                         Write-Debug "File has been downloaded successfully"
                         $worked = $true
                             
@@ -617,7 +603,6 @@ Function Get-ReverseProxyLogs {
 
                     } else {
 
-                        #If the file isn't found, re-download the file from SAM.
                         Write-Debug "Warning: File not found"
                         $result = try {
                 
