@@ -28,6 +28,30 @@ add-type @"
 }
 
 function Deploy-Changes{
+    
+    <#
+    
+    .SYNOPSIS 
+    Sends a command to the target ISAM appliance to deploy all changes
+
+    .DESCRIPTION
+    The Deploy-Changes function uses the functionality of Invoke-RestMethod to contact a ISAM appliance and issue a command to deploy all changes that are currently stored.
+    Certain parameters are required before the function will execute
+
+    .PARAMETER machines
+    This parameter is required by default and can contain an array of different ISAM appliances, the command to deploy changes will be issued to all of the ISAM appliances in the array
+    Please be aware that the array will only accept IP addresses
+
+    .PARAMETER username
+    This parameter is required by default, this parameter should contain a user id that is avaliable to the ISAM appliance and has the correct permissions to issue the command
+
+    .EXAMPLE
+    Deploy-Changes -machines 10.79.10.1,10.79.10.2,10.79.50.1,10.79.50.2 -user admin@local
+
+    .NOTES
+    On execution you will be asked to provide the password for the selected account
+
+    #>
 
     Param(
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
@@ -59,6 +83,33 @@ function Deploy-Changes{
 #
 
 Function Get-ReverseProxy {
+       
+    <#
+    
+    .SYNOPSIS 
+    Send a GET request to the a target ISAM appliance to retrieve information about the local Reverse Proxy instances
+
+    .DESCRIPTION
+    The Get-ReverseProxy function uses the functionality of Invoke-RestMethod to contact a ISAM appliance and retrieve information on the local Reverse Proxies.
+    Certain parameters are required before the function will execute
+
+    .PARAMETER machine
+    This parameter is required by default and must contain an IP addresses of a target ISAM appliance
+
+    .PARAMETER username
+    This parameter is required by default, this parameter should contain a user id that is avaliable to the ISAM appliance and has the correct permissions to issue the command
+
+    .PARAMETER password
+    This parameter is required by default and must match the password of the target user id
+
+    .EXAMPLE
+    Deploy-Changes -machines 10.79.10.1 -username admin@local -password dummypass
+
+    .NOTES
+    The return value from the ISAM appliance is in a JSON format, this is automatically changed into a hash table
+
+    #>
+       
         
     Param(
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machine,
