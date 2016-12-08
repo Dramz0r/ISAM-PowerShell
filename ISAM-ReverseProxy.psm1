@@ -869,7 +869,6 @@ Function Get-ReverseProxyStanzaConfig {
     $responseBody
 
     return $res
-
 }
 
 Function Set-ReverseProxyConfigItemValue {
@@ -897,7 +896,7 @@ Function Set-ReverseProxyConfigItemValue {
         Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$Instance/configuration/stanza/$Stanza/entry_name/$Entry" -Headers $headers -Method PUT -Body $body -ContentType "application/json"
 
         }catch {
-            $exception = $_.Exception.Response.GetResponseStream()
+            $exception = $_.Exception.Response.GetResponseStream()s
             $reader = New-Object System.IO.StreamReader($exception)
             $responseBody = $reader.ReadToEnd();
         }
