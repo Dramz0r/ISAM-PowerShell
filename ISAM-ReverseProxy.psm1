@@ -1144,7 +1144,30 @@ Function Get-Session {
     return $result
 }
 
-Function Remove-SessionByID {}
+Function Remove-SessionByID {
+    Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][string]$machine,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$replicaSet,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$SMSUser)
+
+    $password = Read-Host "Password for user $username"
+    $headers = Set-Headers -username $username -password $password
+
+    $res = try {
+                
+        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+        Invoke-RestMethod -Uri "https://$machine/isam/dsc/admin/replicas/$replicaSet/sessions/user/$SMSUser" -Headers $headers -Method DELETE
+
+        }catch {
+            $exception = $_.Exception.Response.GetResponseStream()
+            $reader = New-Object System.IO.StreamReader($exception)
+            $responseBody = $reader.ReadToEnd();
+        }
+    $responseBody
+    return $res
+}
 
 Function Remove-SessionByUser {
     Param(
@@ -1172,9 +1195,40 @@ Function Remove-SessionByUser {
 }
 
 
+Function Get-AverageResponseTime{
+    Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][string]$machine,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$duration,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][DateTime]$startTime,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Instance)
 
+    $password = Read-Host "Password for user $username"
+    $headers = Set-Headers -username $username -password $password
 
+        $res = try {
+                
+        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
 
+        Invoke-RestMethod -Uri "https://$machine/analysis/reverse_proxy_traffic/reqtime?duration=$duration&date=$startTime&instance=$Instance" -Headers $headers -Method GET
+
+        }catch {
+            $exception = $_.Exception.Response.GetResponseStream()
+            $reader = New-Object System.IO.StreamReader($exception)
+            $responseBody = $reader.ReadToEnd();
+        }
+    $responseBody
+    return $res
+
+}
+
+function ConvertTo-UnixTimestamp {
+	$epoch = Get-Date -Year 1970 -Month 1 -Day 1 -Hour 0 -Minute 0 -Second 0	
+ 	$input | % {		
+		$milliSeconds = [math]::truncate($_.ToUniversalTime().Subtract($epoch).TotalMilliSeconds)
+		Write-Output $milliSeconds
+	}	
+}
 
 
 Export-ModuleMember -function 'Get-*'
