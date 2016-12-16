@@ -17,6 +17,7 @@ add-type @"
         }
     }
 "@
+    #$pass = Convert-Pass -password $password
 
     # Set headers
     $authInfo = ("{0}:{1}" -f $username,$password)
@@ -25,6 +26,12 @@ add-type @"
     $headers = @{Accept=("application/json");Contenttype=("application/json");Authorization=("Basic {0}" -f $authInfo)}
 
     return $headers
+}
+
+Function Convert-Pass {
+    Param([Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$password)
+    $pass = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($password))
+    Return $pass
 }
 
 function Deploy-Changes{
