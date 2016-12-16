@@ -896,7 +896,7 @@ Function Set-ReverseProxyConfigItemValue {
         Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$Instance/configuration/stanza/$Stanza/entry_name/$Entry" -Headers $headers -Method PUT -Body $body -ContentType "application/json"
 
         }catch {
-            $exception = $_.Exception.Response.GetResponseStream()s
+            $exception = $_.Exception.Response.GetResponseStream()
             $reader = New-Object System.IO.StreamReader($exception)
             $responseBody = $reader.ReadToEnd();
         }
@@ -1194,6 +1194,9 @@ Function Remove-SessionByUser {
     return $res
 }
 
+#
+# Additional functionality
+#
 
 Function Get-AverageResponseTime{
     Param(
@@ -1209,21 +1212,43 @@ Function Get-AverageResponseTime{
     $UnixTimeStamp = [System.Math]::Truncate((Get-Date -Date $time -UFormat %s))
 
 
-        $res = try {
+    $res = try {
                 
         [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
 
         Invoke-RestMethod -Uri "https://$machine/analysis/reverse_proxy_traffic/reqtime?duration=$duration&date=$UnixTimeStamp&instance=$Instance" -Headers $headers -Method GET
 
-        }catch {
+        } catch {
             $exception = $_.Exception.Response.GetResponseStream()
             $reader = New-Object System.IO.StreamReader($exception)
             $responseBody = $reader.ReadToEnd();
         }
     $responseBody
-    return $res
+    #return $res
 
+    $recordmain = $res.records
+    foreach ($rec in $recordmain){
+
+        $juntion = $rec.junction
+        $recordloop = $rec.records
+
+        write-host -ForegroundColor Yellow "Junction point: " $juntion
+        if($recordloop -eq $null){
+            write-host "No records for this junction"
+        } else { 
+            foreach($record in $recordloop){
+                
+                    $time = $record.t
+                    $origin = get-date "1970-01-01 00:00:00"
+                    $time = $origin.AddSeconds($time).ToLocalTime()
+
+                    Write-Host "Average response time of: " $record.r "ms @ " $time " calculated by " $record.n " requests"
+            } 
+        }
+    }
 }
+
+
 
 Export-ModuleMember -function 'Get-*'
 Export-ModuleMember -function 'Set-*'
