@@ -1200,17 +1200,20 @@ Function Get-AverageResponseTime{
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][string]$machine,
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$duration,
-    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][DateTime]$startTime,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$startTime,
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Instance)
 
     $password = Read-Host "Password for user $username"
     $headers = Set-Headers -username $username -password $password
+    $time = [datetime]::ParseExact($startTime,'dd/MM/yyyy-HH:mm:ss',$null)
+    $UnixTimeStamp = [System.Math]::Truncate((Get-Date -Date $time -UFormat %s))
+
 
         $res = try {
                 
         [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
 
-        Invoke-RestMethod -Uri "https://$machine/analysis/reverse_proxy_traffic/reqtime?duration=$duration&date=$startTime&instance=$Instance" -Headers $headers -Method GET
+        Invoke-RestMethod -Uri "https://$machine/analysis/reverse_proxy_traffic/reqtime?duration=$duration&date=$UnixTimeStamp&instance=$Instance" -Headers $headers -Method GET
 
         }catch {
             $exception = $_.Exception.Response.GetResponseStream()
@@ -1221,15 +1224,6 @@ Function Get-AverageResponseTime{
     return $res
 
 }
-
-function ConvertTo-UnixTimestamp {
-	$epoch = Get-Date -Year 1970 -Month 1 -Day 1 -Hour 0 -Minute 0 -Second 0	
- 	$input | % {		
-		$milliSeconds = [math]::truncate($_.ToUniversalTime().Subtract($epoch).TotalMilliSeconds)
-		Write-Output $milliSeconds
-	}	
-}
-
 
 Export-ModuleMember -function 'Get-*'
 Export-ModuleMember -function 'Set-*'
