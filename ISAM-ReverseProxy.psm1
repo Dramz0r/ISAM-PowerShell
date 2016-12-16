@@ -28,12 +28,6 @@ add-type @"
     return $headers
 }
 
-Function Convert-Pass {
-    Param([Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$password)
-    $pass = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($password))
-    Return $pass
-}
-
 function Deploy-Changes{
     
     <#
@@ -120,8 +114,9 @@ Function Get-ReverseProxy {
         
     Param(
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machine,
-    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
-    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$password)
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username)
+
+    $password = Read-Host "Enter password for $username"
 
     # Set headers
     $headers = Set-Headers -username $username -password $password
