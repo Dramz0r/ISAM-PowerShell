@@ -675,14 +675,14 @@ Function Add-ReverseProxyConfigItem {
         $password = Read-Host "Enter password for $machine for $username"
         $headers = Set-Headers -username $username -password $password
 
-        $body = "{entries[['$Entry':'$value']]}"
+        $body = "{entries:['$Entry','$value']}"
 
         $res = try {
                 
         [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
 
-        Write-Debug "PUT https://$machine/wga/reverseproxy/$Instance/configuration/stanza/$Stanza/entry_name/$Entry - $body"
-        Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$Instance/configuration/stanza/$Stanza/entry_name/$Entry" -Headers $headers -Method PUT -Body $body -ContentType "application/json"
+        Write-Debug "POST https://$machine/wga/reverseproxy/$Instance/configuration/stanza/$Stanza/entry_name/$Entry - $body"
+        Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$Instance/configuration/stanza/$Stanza/entry_name/$Entry" -Headers $headers -Method POST -Body $body -ContentType "application/json"
 
         }catch {
             $exception = $_.Exception.Response.GetResponseStream()
