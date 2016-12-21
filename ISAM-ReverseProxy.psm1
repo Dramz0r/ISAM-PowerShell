@@ -1226,7 +1226,6 @@ Function Get-AverageResponseTime{
             $responseBody = $reader.ReadToEnd();
         }
     $responseBody
-    #return $res
 
     $recordmain = $res.records
     foreach ($rec in $recordmain){
