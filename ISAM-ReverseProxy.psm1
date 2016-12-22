@@ -440,7 +440,7 @@ Function Add-ReverseProxy {
 # Logging
 #
 
-Function Get-ReverseProxyLogsByDate{
+Function Export-ReverseProxyLogsByDate{
 
     Param(
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
@@ -571,7 +571,7 @@ Function Get-ReverseProxyLogsByDate{
     } 
 }
 
-Function Get-ReverseProxyLogs {
+Function Export-ReverseProxyLogs {
 
     Param(
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
@@ -977,7 +977,7 @@ Function Set-ReverseProxyConfigItemValue {
 # Reverse Proxy Administration
 #
 
-Function Set-ReverseProxyStatistics{
+Function Set-ReverseProxyStats{
     Param(
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][string]$machine,
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
@@ -1018,6 +1018,35 @@ Function Set-ReverseProxyStatistics{
             $responseBody = $reader.ReadToEnd();
         }
     $responseBody
+
+}
+
+Function Get-ReverseProxyStatsFiles{
+    Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][string]$machine,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Instance,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Component)
+
+    $password = Read-Host "Password for user $username"
+    $headers = Set-Headers -username $username -password $password
+
+     $res = try {
+                
+        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+        Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$Instance/statistics/$Component/stats_files" -Headers $headers -Method GET
+
+        } catch {
+            $exception = $_.Exception.Response.GetResponseStream()
+            $reader = New-Object System.IO.StreamReader($exception)
+            $responseBody = $reader.ReadToEnd();
+        }
+    $responseBody
+    Return $res
+}
+
+Function Export-ReverseProxyStatsFiles{
 
 }
 
@@ -1370,3 +1399,4 @@ Export-ModuleMember -function 'Set-*'
 Export-ModuleMember -function 'Add-*'
 Export-ModuleMember -function 'Remove-*'
 Export-ModuleMember -Function 'Stop-*'
+Export-ModuleMember -Function 'Export-*'
