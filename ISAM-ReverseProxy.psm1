@@ -321,6 +321,72 @@ Function Remove-ReverseProxy {
 
 Function Add-ReverseProxy {
 
+    <#
+    
+    .SYNOPSIS 
+    Send a GET request to the a target ISAM appliance to retrieve information about the local Reverse Proxy instances
+
+    .DESCRIPTION
+    The Get-ReverseProxy function uses the functionality of Invoke-RestMethod to contact a ISAM appliance and retrieve information on the local Reverse Proxies.
+    Certain parameters are required before the function will execute
+
+    .PARAMETER machine
+    This parameter is required by default and must contain an IP addresses of a target ISAM appliance
+
+    .PARAMETER username
+    This parameter is required by default, this parameter should contain a user id that is avaliable to the ISAM appliance and has the correct permissions to issue the command
+
+    .PARAMETER instance
+    This parameter is required by default
+
+        .PARAMETER Hostname
+    This parameter is required by default and must match the name of the appliance that is targetted
+
+        .PARAMETER ListenPort
+    This parameter is required by default and
+
+        .PARAMETER Domain
+    This parameter is required by default and automatically set to 'Default' 
+
+        .PARAMETER SecMasterPW
+    This parameter is required by default and
+
+        .PARAMETER ldapssl
+    This parameter is required by default, only two values can be passed to this, 'Yes' or 'No' - Defaulted to 'No'
+
+        .PARAMETER ldapkdb
+    This parameter is not required by default, this will need to match a keystore on the targetted appliance
+
+        .PARAMETER ldaplabel
+    This parameter is not required by default and will need to match a certificate label within the specified LdapKDB
+
+        .PARAMETER ldapssl
+    This parameter is not required by default - this should contain the port number to which the LDAP listens for SSL/TSL connections.
+
+        .PARAMETER 
+    This parameter is required by default and
+
+        .PARAMETER 
+    This parameter is required by default and
+
+        .PARAMETER 
+    This parameter is required by default and
+
+        .PARAMETER 
+    This parameter is required by default and
+
+        .PARAMETER 
+    This parameter is required by default and
+
+
+    .EXAMPLE
+    Deploy-Changes -machines 10.79.10.1 -username admin@local -password dummypass
+
+    .NOTES
+    The return value from the ISAM appliance is in a JSON format, this is automatically changed into a hash table
+
+    #>
+
     param(        
         [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
         [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
@@ -905,6 +971,54 @@ Function Set-ReverseProxyConfigItemValue {
         $responseBody
         $res
     }
+}
+
+#
+# Reverse Proxy Administration
+#
+
+Function Set-ReverseProxyStatistics{
+    Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][string]$machine,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Instance,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Component,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateSet('On','Off')][string]$status,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$interval_hr,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$interval_min,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$interval_sec,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$count,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$flush,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$rollover_size,
+    [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$maxrollover)
+
+    $password = Read-Host "Password for user $username"
+    $headers = Set-Headers -username $username -password $password
+
+    $body = "{
+                        'status': '$status',
+                        'interval_hours':'$interval_hr',
+                        'interval_mins':'$interval_min',
+                        'interval_secs':'$interval_sec',
+                        'count':'$count',
+                        'flush_interval':'$flush',
+                        'rollover_size':'$rollover_size',
+                        'max_rollover_files':'$maxrollover'
+                    }"
+
+    $res = try {
+                
+        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+        Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$Instance/statistics/$Component" -Headers $headers -Method PUT -Body $body
+
+        } catch {
+            $exception = $_.Exception.Response.GetResponseStream()
+            $reader = New-Object System.IO.StreamReader($exception)
+            $responseBody = $reader.ReadToEnd();
+        }
+    $responseBody
+
 }
 
 #
