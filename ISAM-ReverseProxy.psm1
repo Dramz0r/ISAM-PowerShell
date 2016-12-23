@@ -977,9 +977,33 @@ Function Set-ReverseProxyConfigItemValue {
 # Reverse Proxy Administration
 #
 
-Function Set-ReverseProxyStats{
+Function Get-ReverseProxyStats{
     Param(
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][string]$machine,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Instance)
+    
+    $password = Read-Host "Password for user $username"
+    $headers = Set-Headers -username $username -password $password
+
+      $res = try {
+                
+        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+        Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$Instance/statistics" -Headers $headers -Method GET
+
+        } catch {
+            $exception = $_.Exception.Response.GetResponseStream()
+            $reader = New-Object System.IO.StreamReader($exception)
+            $responseBody = $reader.ReadToEnd();
+        }
+    $responseBody
+    return $res
+}
+
+Function Set-ReverseProxyStats{
+    Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machine,
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Instance,
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Component,
@@ -1047,6 +1071,13 @@ Function Get-ReverseProxyStatsFiles{
 }
 
 Function Export-ReverseProxyStatsFiles{
+    Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][array]$instances,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$dir)
+
+
 
 }
 
