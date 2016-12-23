@@ -1003,7 +1003,7 @@ Function Get-ReverseProxyStats{
 
 Function Set-ReverseProxyStats{
     Param(
-    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machine,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Instance,
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Component,
@@ -1016,33 +1016,35 @@ Function Set-ReverseProxyStats{
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$rollover_size,
     [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$maxrollover)
 
-    $password = Read-Host "Password for user $username"
-    $headers = Set-Headers -username $username -password $password
+    foreach($machine in $machines){
 
-    $body = "{
-                        'status': '$status',
-                        'interval_hours':'$interval_hr',
-                        'interval_mins':'$interval_min',
-                        'interval_secs':'$interval_sec',
-                        'count':'$count',
-                        'flush_interval':'$flush',
-                        'rollover_size':'$rollover_size',
-                        'max_rollover_files':'$maxrollover'
-                    }"
+        $password = Read-Host "Password for user $username on $machine"
+        $headers = Set-Headers -username $username -password $password
 
-    $res = try {
+        $body = "{
+                            'status': '$status',
+                            'interval_hours':'$interval_hr',
+                            'interval_mins':'$interval_min',
+                            'interval_secs':'$interval_sec',
+                            'count':'$count',
+                            'flush_interval':'$flush',
+                            'rollover_size':'$rollover_size',
+                            'max_rollover_files':'$maxrollover'
+                        }"
+
+        $res = try {
                 
-        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+            [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
 
-        Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$Instance/statistics/$Component" -Headers $headers -Method PUT -Body $body
+            Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$Instance/statistics/$Component" -Headers $headers -Method PUT -Body $body
 
-        } catch {
-            $exception = $_.Exception.Response.GetResponseStream()
-            $reader = New-Object System.IO.StreamReader($exception)
-            $responseBody = $reader.ReadToEnd();
-        }
-    $responseBody
-
+            } catch {
+                $exception = $_.Exception.Response.GetResponseStream()
+                $reader = New-Object System.IO.StreamReader($exception)
+                $responseBody = $reader.ReadToEnd();
+            }
+        $responseBody
+    }
 }
 
 Function Get-ReverseProxyStatsFiles{
