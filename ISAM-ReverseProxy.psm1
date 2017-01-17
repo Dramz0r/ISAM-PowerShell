@@ -1005,6 +1005,7 @@ Function Set-ReverseProxyStats{
     Param(
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$password,
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Instance,
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Component,
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateSet('On','Off')][string]$status,
@@ -1017,10 +1018,11 @@ Function Set-ReverseProxyStats{
     [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$maxrollover)
 
     foreach($machine in $machines){
-
-        $password = Read-Host "Password for user $username on $machine"
-        $headers = Set-Headers -username $username -password $password
-
+        if ($password -eq $null){
+            $password = Read-Host "Password for user $username on $machine"
+            $headers = Set-Headers -username $username -password $password
+            $password = $null
+        }
         $body = "{
                             'status': '$status',
                             'interval_hours':'$interval_hr',
@@ -1081,6 +1083,78 @@ Function Export-ReverseProxyStatsFiles{
 
 
 
+}
+
+Function Get-ReverseProxyTracing{
+    Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][string]$machine,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Instance)
+    
+    $password = Read-Host "Password for user $username"
+    $headers = Set-Headers -username $username -password $password
+
+      $res = try {
+                
+        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+        Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$Instance/tracing" -Headers $headers -Method GET
+
+        } catch {
+            $exception = $_.Exception.Response.GetResponseStream()
+            $reader = New-Object System.IO.StreamReader($exception)
+            $responseBody = $reader.ReadToEnd();
+        }
+    $responseBody
+    return $res
+}
+
+Function Set-ReverseProxyTracing{
+    Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][array]$machines,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$password,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Instance,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Component,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateSet('On','Off')][string]$status,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$interval_hr,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$interval_min,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$interval_sec,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$count,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$flush,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$rollover_size,
+    [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$maxrollover)
+
+    foreach($machine in $machines){
+        if ($password -eq $null){
+            $password = Read-Host "Password for user $username on $machine"
+            $headers = Set-Headers -username $username -password $password
+            $password = $null
+        }
+        $body = "{
+                            'status': '$status',
+                            'interval_hours':'$interval_hr',
+                            'interval_mins':'$interval_min',
+                            'interval_secs':'$interval_sec',
+                            'count':'$count',
+                            'flush_interval':'$flush',
+                            'rollover_size':'$rollover_size',
+                            'max_rollover_files':'$maxrollover'
+                        }"
+
+        $res = try {
+                
+            [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+            Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy/$Instance/statistics/$Component" -Headers $headers -Method PUT -Body $body
+
+            } catch {
+                $exception = $_.Exception.Response.GetResponseStream()
+                $reader = New-Object System.IO.StreamReader($exception)
+                $responseBody = $reader.ReadToEnd();
+            }
+        $responseBody
+    }
 }
 
 #
