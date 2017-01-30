@@ -1,4 +1,11 @@
-﻿function Set-Headers {
+﻿########################################################################
+#
+# ISAM-ReverseProxy
+#
+########################################################################
+
+
+function Set-Headers {
     
     Param([Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$password)
@@ -720,6 +727,39 @@ Function Remove-ReverseProxyLog {
         $responseBody
         $responseBody = $null
 
+}
+
+Function Get-ReverseProxyLogSnippet {
+
+    Param(
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][ValidateScript({$_ -match [IPAddress]$_ })][string]$machine,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$password,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$instance,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$log,
+    [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$size)
+   
+    #$password = Read-Host "Password for $machine"
+
+    $headers = Set-Headers -username $username -password $password
+        
+    $result = try {
+                
+        [System.Net.ServicePointManager]::CertificatePolicy = new-object IDontCarePolicy
+
+        Invoke-RestMethod -Uri "https://$machine/wga/reverseproxy_logging/instance/$instance/${log}?size=$size" -Headers $headers -Method GET -TimeoutSec 0
+
+    } catch {
+        $exception = $result.Exception.Response.GetResponseStream()
+        $reader = New-Object System.IO.StreamReader($exception)
+        $responseBody = $reader.ReadToEnd();
+    }
+    $responseBody
+
+    $res = $result.contents
+
+    return $res
+  
 }
 
 #
