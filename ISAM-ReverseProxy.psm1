@@ -789,7 +789,7 @@ Function Add-ReverseProxyConfigItem {
 
     foreach ($machine in $machines){
 
-        $password = Read-Host "Enter password for $machine for $username"
+                if ($password -eq $null -or $pasword -eq ""){ $password = Read-Host "Enter password for $machine for $username" }
         $headers = Set-Headers -username $username -password $password
 
         $body = "{entries:['$Entry','$value']}"
@@ -824,7 +824,7 @@ Function Add-ReverseProxyStanza {
 
     foreach ($machine in $machines){
 
-        $password = Read-Host "Enter password for $machine for $username"
+        if ($password -eq $null -or $pasword -eq ""){ $password = Read-Host "Enter password for $machine for $username" }
         $headers = Set-Headers -username $username -password $password
 
         $res = try {
@@ -856,7 +856,7 @@ Function Remove-ReverseProxyStanza {
 
     foreach ($machine in $machines){
 
-        $password = Read-Host "Enter password for $machine for $username"
+        if ($password -eq $null -or $pasword -eq ""){ $password = Read-Host "Enter password for $machine for $username" }
         $headers = Set-Headers -username $username -password $password
 
         $res = try {
@@ -887,7 +887,7 @@ Function Remove-ReverseProxyConfigItemValue{
 
     foreach ($machine in $machines){
 
-        $password = Read-Host "Enter password for $machine for $username"
+        if ($password -eq $null -or $pasword -eq ""){ $password = Read-Host "Enter password for $machine for $username" }
         $headers = Set-Headers -username $username -password $password
 
         $res = try {
@@ -915,7 +915,7 @@ Function Get-ReverseProxyStanzas {
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Instance,
      [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$password)
 
-    $password = Read-Host "Enter password for $machine for $username"
+    if ($password -eq $null -or $pasword -eq ""){ $password = Read-Host "Enter password for $machine for $username" }
     $headers = Set-Headers -username $username -password $password
 
     $res = try {
@@ -946,7 +946,7 @@ Function Get-ReverseProxyConfigItemValue {
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Entry,
      [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$password)
 
-    $password = Read-Host "Enter password for $machine for $username"
+    if ($password -eq $null -or $pasword -eq ""){ $password = Read-Host "Enter password for $machine for $username" }
     $headers = Set-Headers -username $username -password $password
 
     $res = try {
@@ -976,7 +976,7 @@ Function Get-ReverseProxyStanzaConfig {
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Stanza,
      [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$password)
 
-    $password = Read-Host "Enter password for $machine for $username"
+    if ($password -eq $null -or $pasword -eq ""){ $password = Read-Host "Enter password for $machine for $username" }
     $headers = Set-Headers -username $username -password $password
 
     $res = try {
@@ -1010,7 +1010,7 @@ Function Set-ReverseProxyConfigItemValue {
 
     foreach ($machine in $machines){
 
-        $password = Read-Host "Enter password for $machine for $username"
+        if ($password -eq $null -or $pasword -eq ""){ $password = Read-Host "Enter password for $machine for $username" }
         $headers = Set-Headers -username $username -password $password
 
         $body = "{'value':'$EntryChange'}"
@@ -1043,7 +1043,7 @@ Function Get-ReverseProxyStats{
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Instance,
     [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$password)
     
-    $password = Read-Host "Password for user $username"
+    if ($password -eq $null -or $pasword -eq ""){ $password = Read-Host "Enter password for $machine for $username" }
     $headers = Set-Headers -username $username -password $password
 
       $res = try {
@@ -1117,7 +1117,7 @@ Function Get-ReverseProxyStatsFiles{
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Component,
     [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$password)
 
-    $password = Read-Host "Password for user $username"
+    if ($password -eq $null -or $pasword -eq ""){ $password = Read-Host "Enter password for $machine for $username" }
     $headers = Set-Headers -username $username -password $password
 
      $res = try {
@@ -1154,7 +1154,7 @@ Function Get-ReverseProxyTracing{
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Instance,
     [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$password)
     
-    $password = Read-Host "Password for user $username"
+    if ($password -eq $null -or $pasword -eq ""){ $password = Read-Host "Enter password for $machine for $username" }
     $headers = Set-Headers -username $username -password $password
 
       $res = try {
@@ -1333,7 +1333,7 @@ Function Get-Junctions {
     [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$password)
 
 
-    $password = Read-Host "Enter password for $machine for $username"
+    if ($password -eq $null -or $pasword -eq ""){ $password = Read-Host "Enter password for $machine for $username" }
     $headers = Set-Headers -username $username -password $password
 
     $res = try {
@@ -1363,7 +1363,7 @@ Param(
 
     foreach ($machine in $machines){
         
-        $password = Read-Host "Enter password for $machine for $username"
+        if ($password -eq $null -or $pasword -eq ""){ $password = Read-Host "Enter password for $machine for $username" }
         $headers = Set-Headers -username $username -password $password
 
         $res = try {
@@ -1393,7 +1393,7 @@ Param(
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$username,
     [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$password)
 
-    $password = Read-Host "Password for user $username"
+    if ($password -eq $null -or $pasword -eq ""){ $password = Read-Host "Enter password for $machine for $username" }
     $headers = Set-Headers -username $username -password $password
 
     $res = try {
@@ -1418,7 +1418,7 @@ Function Get-ReplicaSetServers {
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$replicaSet,
     [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$password)
 
-    $password = Read-Host "Password for user $username"
+    if ($password -eq $null -or $pasword -eq ""){ $password = Read-Host "Enter password for $machine for $username" }
     $headers = Set-Headers -username $username -password $password
 
     $res = try {
@@ -1445,7 +1445,7 @@ Function Get-Session {
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$maxReturn = "100",
     [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$password)
 
-    $password = Read-Host "Password for user $username"
+    if ($password -eq $null -or $pasword -eq ""){ $password = Read-Host "Enter password for $machine for $username" }
     $headers = Set-Headers -username $username -password $password
 
     $res = try {
@@ -1474,7 +1474,7 @@ Function Remove-SessionByID {
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$SMSUser,
     [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$password)
 
-    $password = Read-Host "Password for user $username"
+    if ($password -eq $null -or $pasword -eq ""){ $password = Read-Host "Enter password for $machine for $username" }
     $headers = Set-Headers -username $username -password $password
 
     $res = try {
@@ -1500,7 +1500,7 @@ Function Remove-SessionByUser {
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$SMSUser,
     [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$password)
 
-    $password = Read-Host "Password for user $username"
+    if ($password -eq $null -or $pasword -eq ""){ $password = Read-Host "Enter password for $machine for $username" }
     $headers = Set-Headers -username $username -password $password
 
     $res = try {
@@ -1531,7 +1531,7 @@ Function Get-AverageResponseTime{
     [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true,Position=0)][string]$Instance,
     [Parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$true,Position=0)][string]$password)
 
-    $password = Read-Host "Password for user $username"
+    if ($password -eq $null -or $pasword -eq ""){ $password = Read-Host "Enter password for $machine for $username" }
     $headers = Set-Headers -username $username -password $password
     $time = [datetime]::ParseExact($startTime,'dd/MM/yyyy-HH:mm:ss',$null)
     $UnixTimeStamp = [System.Math]::Truncate((Get-Date -Date $time -UFormat %s))
